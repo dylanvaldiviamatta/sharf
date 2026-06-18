@@ -1,6 +1,7 @@
 using System.Globalization;
 using TmsIntegration.Application.Common.Dispatcher;
 using TmsIntegration.Application.DTOs.Responses;
+using TmsIntegration.Application.Mappers;
 using TmsIntegration.Domain.Exceptions;
 using TmsIntegration.Domain.Interfaces.Repositories;
 
@@ -40,16 +41,27 @@ public sealed class ProcessTmsEventCommandHandler
             cancellationToken);
 
         if (order is null)
-            throw new NotFoundException(
-                "Order",
-                ev.Details.OrderNumber);
+            throw new NotFoundException("Order", ev.Details.OrderNumber);
+
+        var newStatus = EventStatusMapper.ToEventStatus(ev.Status);
+
+        if (EventStatusMapper.IsFinalStatus(order.CurrentStatus))
+            throw new OrderInFinalStateException(
+                order.OrderNumber,
+                order.CurrentStatus.ToString());
+
+        order.CurrentStatus = newStatus;
+        order.UpdatedAt = eventDatePeru;
+
+        await _orderRepository.UpdateAsync(order, cancellationToken);
 
         return new WebhookAcceptedResponse
         {
-            Message = "Event accepted for processing.",
-            OrderNumber = ev.Details.OrderNumber,
+            Message = "Event accepted and order status updated.",
+            OrderNumber = order.OrderNumber,
             Status = ev.Status,
             AcceptedAt = DateTimeOffset.UtcNow
         };
     }
 }
+
