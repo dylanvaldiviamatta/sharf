@@ -42,4 +42,7 @@ public static class EventStatusMapper
     /// </summary>
     public static bool IsFinalStatus(EventStatus status) =>
         status is EventStatus.Delivered or EventStatus.Returned;
+
+    public static bool IsVisitableStatus(EventStatus status) =>
+        status is EventStatus.Delivered or EventStatus.NotDelivered;
 }
