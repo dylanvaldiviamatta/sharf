@@ -26,4 +26,7 @@ app.UseExceptionHandler();
 // Endpoints del webhook
 app.MapWebhookEndpoints();
 
+// Endpoints del historial
+app.MapHistoryEndpoints();
+
 app.Run();
