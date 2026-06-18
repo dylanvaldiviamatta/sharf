@@ -10,5 +10,6 @@ public sealed record WebhookAcceptedResponse
     public string Status { get; init; } = string.Empty;
     public int VisitCount { get; init; }
     public IReadOnlyList<string> StoredEvidences { get; init; } = [];
+    public string NotificationChannel { get; init; } = string.Empty;
     public DateTimeOffset AcceptedAt { get; init; } = DateTimeOffset.UtcNow;
 }

@@ -20,6 +20,7 @@ public sealed class ProcessTmsEventCommandHandler
     private readonly IOrderEventRepository _orderEventRepository;
     private readonly IOrderEvidenceRepository _orderEvidenceRepository;
     private readonly IEvidenceStorageService _evidenceStorageService;
+    private readonly INotificationStrategyFactory _notificationFactory;
     private readonly ICommandDispatcher _dispatcher;
 
     public ProcessTmsEventCommandHandler(
@@ -27,12 +28,14 @@ public sealed class ProcessTmsEventCommandHandler
         IOrderEventRepository orderEventRepository,
         IOrderEvidenceRepository orderEvidenceRepository,
         IEvidenceStorageService evidenceStorageService,
+        INotificationStrategyFactory notificationFactory,
         ICommandDispatcher dispatcher)
     {
         _orderRepository = orderRepository;
         _orderEventRepository = orderEventRepository;
         _orderEvidenceRepository = orderEvidenceRepository;
         _evidenceStorageService = evidenceStorageService;
+        _notificationFactory = notificationFactory;
         _dispatcher = dispatcher;
     }
 
@@ -56,8 +59,7 @@ public sealed class ProcessTmsEventCommandHandler
         try
         {
             var order = await _orderRepository.GetByOrderNumberAsync(
-                ev.Details.OrderNumber,
-                cancellationToken);
+                ev.Details.OrderNumber, cancellationToken);
 
             if (order is null)
             {
@@ -69,8 +71,7 @@ public sealed class ProcessTmsEventCommandHandler
             {
                 rejectionReason = $"Order is already in final state '{order.CurrentStatus}'.";
                 throw new OrderInFinalStateException(
-                    order.OrderNumber,
-                    order.CurrentStatus.ToString());
+                    order.OrderNumber, order.CurrentStatus.ToString());
             }
 
             var newStatus = EventStatusMapper.ToEventStatus(ev.Status);
@@ -90,6 +91,9 @@ public sealed class ProcessTmsEventCommandHandler
                     order.OrderNumber, ev.Status,
                     ev.Details.Evidences, eventDatePeru, cancellationToken)
                 : [];
+
+            var strategy = _notificationFactory.Resolve(order.NotificationChannel);
+            await strategy.NotifyAsync(order, ev.Status, cancellationToken);
 
             if (order.VisitCount >= 3)
             {
@@ -112,31 +116,18 @@ public sealed class ProcessTmsEventCommandHandler
                 Status = ev.Status,
                 VisitCount = order.VisitCount,
                 StoredEvidences = storedEvidences,
+                NotificationChannel = order.NotificationChannel.ToString(),
                 AcceptedAt = DateTimeOffset.UtcNow
             };
         }
-        catch (NotFoundException)
-        {
-            throw;
-        }
-        catch (OrderInFinalStateException)
-        {
-            throw;
-        }
+        catch (NotFoundException)   { throw; }
+        catch (OrderInFinalStateException) { throw; }
         finally
         {
             await SafeRegisterHistoryAsync(
-                ev.Details.OrderNumber,
-                ev.ServiceType,
-                ev.DispatchType,
-                ev.Status,
-                ev.SubStatus,
-                ev.VehicleCode,
-                ev.CourierName,
-                eventDatePeru,
-                wasApplied,
-                rejectionReason,
-                cancellationToken);
+                ev.Details.OrderNumber, ev.ServiceType, ev.DispatchType,
+                ev.Status, ev.SubStatus, ev.VehicleCode, ev.CourierName,
+                eventDatePeru, wasApplied, rejectionReason, cancellationToken);
         }
     }
 
@@ -187,16 +178,9 @@ public sealed class ProcessTmsEventCommandHandler
     }
 
     private async Task SafeRegisterHistoryAsync(
-        string orderNumber,
-        string serviceType,
-        string dispatchType,
-        string status,
-        string? subStatus,
-        string vehicleCode,
-        string courierName,
-        DateTimeOffset eventDate,
-        bool wasApplied,
-        string? rejectionReason,
+        string orderNumber, string serviceType, string dispatchType,
+        string status, string? subStatus, string vehicleCode, string courierName,
+        DateTimeOffset eventDate, bool wasApplied, string? rejectionReason,
         CancellationToken cancellationToken)
     {
         try
