@@ -9,5 +9,6 @@ public sealed record WebhookAcceptedResponse
     public string OrderNumber { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public int VisitCount { get; init; }
+    public IReadOnlyList<string> StoredEvidences { get; init; } = [];
     public DateTimeOffset AcceptedAt { get; init; } = DateTimeOffset.UtcNow;
 }
