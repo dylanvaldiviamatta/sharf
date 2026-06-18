@@ -5,6 +5,8 @@ using TmsIntegration.Application.Commands.ProcessTmsEventBatch;
 using TmsIntegration.Application.Common.Dispatcher;
 using TmsIntegration.Application.Common.Validation;
 using TmsIntegration.Application.DTOs.Responses;
+using TmsIntegration.Application.Queries.GetAllHistory;
+using TmsIntegration.Application.Queries.GetOrderHistory;
 using TmsIntegration.Application.Validators;
 
 namespace TmsIntegration.Application;
@@ -28,6 +30,15 @@ public static class DependencyInjection
         services.AddScoped<
             ICommandHandler<AutoEmitToBeReturnCommand, WebhookAcceptedResponse>,
             AutoEmitToBeReturnCommandHandler>();
+
+        // Queries
+        services.AddScoped<
+            ICommandHandler<GetOrderHistoryQuery, OrderHistoryResponse>,
+            GetOrderHistoryQueryHandler>();
+
+        services.AddScoped<
+            ICommandHandler<GetAllHistoryQuery, AllHistoryResponse>,
+            GetAllHistoryQueryHandler>();
 
         // Validators
         services.AddScoped<
