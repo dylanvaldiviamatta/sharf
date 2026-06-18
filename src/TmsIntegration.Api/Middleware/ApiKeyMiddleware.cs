@@ -26,7 +26,8 @@ public sealed class ApiKeyMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Path.StartsWithSegments("/openapi"))
+        if (context.Request.Path.StartsWithSegments("/openapi") ||
+            context.Request.Path.StartsWithSegments("/scalar"))
         {
             await _next(context);
             return;
