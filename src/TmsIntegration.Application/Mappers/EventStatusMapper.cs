@@ -45,4 +45,9 @@ public static class EventStatusMapper
 
     public static bool IsVisitableStatus(EventStatus status) =>
         status is EventStatus.Delivered or EventStatus.NotDelivered;
+
+    public static bool IsEvidenceRequired(EventStatus status) =>
+        status is EventStatus.Collected or EventStatus.NotCollected
+               or EventStatus.Delivered or EventStatus.NotDelivered
+               or EventStatus.Returned  or EventStatus.NotReturned;
 }
