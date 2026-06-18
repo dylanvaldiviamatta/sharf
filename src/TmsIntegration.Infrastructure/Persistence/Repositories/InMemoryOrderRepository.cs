@@ -24,4 +24,10 @@ public sealed class InMemoryOrderRepository : IOrderRepository
         _store.TryGetValue(orderNumber, out var order);
         return Task.FromResult(order);
     }
+
+    public Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        _store[order.OrderNumber] = order;
+        return Task.CompletedTask;
+    }
 }
