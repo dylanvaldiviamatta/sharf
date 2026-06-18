@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TmsIntegration.Api/TmsIntegration.Api.csproj" />
+    <Project Path="src/TmsIntegration.Application/TmsIntegration.Application.csproj" />
+    <Project Path="src/TmsIntegration.Domain/TmsIntegration.Domain.csproj" />
+    <Project Path="src/TmsIntegration.Infrastructure/TmsIntegration.Infrastructure.csproj" />
+  </Folder>
+</Solution>
