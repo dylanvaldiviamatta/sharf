@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using TmsIntegration.Application.Commands.AutoEmitToBeReturn;
 using TmsIntegration.Application.Commands.ProcessTmsEvent;
 using TmsIntegration.Application.Commands.ProcessTmsEventBatch;
 using TmsIntegration.Application.Common.Dispatcher;
@@ -23,6 +24,10 @@ public static class DependencyInjection
         services.AddScoped<
             ICommandHandler<ProcessTmsEventBatchCommand, BatchWebhookResponse>,
             ProcessTmsEventBatchCommandHandler>();
+
+        services.AddScoped<
+            ICommandHandler<AutoEmitToBeReturnCommand, WebhookAcceptedResponse>,
+            AutoEmitToBeReturnCommandHandler>();
 
         // Validators
         services.AddScoped<
