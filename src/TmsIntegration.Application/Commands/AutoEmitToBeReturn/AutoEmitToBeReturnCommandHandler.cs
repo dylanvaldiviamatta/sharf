@@ -1,0 +1,44 @@
+using TmsIntegration.Application.Common.Dispatcher;
+using TmsIntegration.Application.DTOs.Responses;
+using TmsIntegration.Domain.Enums;
+using TmsIntegration.Domain.Exceptions;
+using TmsIntegration.Domain.Interfaces.Repositories;
+
+namespace TmsIntegration.Application.Commands.AutoEmitToBeReturn;
+
+public sealed class AutoEmitToBeReturnCommandHandler
+    : ICommandHandler<AutoEmitToBeReturnCommand, WebhookAcceptedResponse>
+{
+    private readonly IOrderRepository _orderRepository;
+
+    public AutoEmitToBeReturnCommandHandler(IOrderRepository orderRepository)
+    {
+        _orderRepository = orderRepository;
+    }
+
+    public async Task<WebhookAcceptedResponse> HandleAsync(
+        AutoEmitToBeReturnCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var order = await _orderRepository.GetByOrderNumberAsync(
+            command.OrderNumber,
+            cancellationToken);
+
+        if (order is null)
+            throw new NotFoundException("Order", command.OrderNumber);
+
+        order.CurrentStatus = EventStatus.ToBeReturn;
+        order.UpdatedAt = command.EventDate;
+
+        await _orderRepository.UpdateAsync(order, cancellationToken);
+
+        return new WebhookAcceptedResponse
+        {
+            Message = "Visit limit reached. Order automatically assigned to return.",
+            OrderNumber = order.OrderNumber,
+            Status = "TO_BE_RETURN",
+            VisitCount = order.VisitCount,
+            AcceptedAt = DateTimeOffset.UtcNow
+        };
+    }
+}
