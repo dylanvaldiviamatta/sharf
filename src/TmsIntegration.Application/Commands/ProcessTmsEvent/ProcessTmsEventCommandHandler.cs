@@ -1,4 +1,5 @@
 using System.Globalization;
+using TmsIntegration.Application.Commands.AutoEmitToBeReturn;
 using TmsIntegration.Application.Common.Dispatcher;
 using TmsIntegration.Application.DTOs.Responses;
 using TmsIntegration.Application.Mappers;
@@ -16,10 +17,14 @@ public sealed class ProcessTmsEventCommandHandler
     private static readonly TimeSpan PeruUtcOffset = TimeSpan.FromHours(-5);
 
     private readonly IOrderRepository _orderRepository;
+    private readonly ICommandDispatcher _dispatcher;
 
-    public ProcessTmsEventCommandHandler(IOrderRepository orderRepository)
+    public ProcessTmsEventCommandHandler(
+        IOrderRepository orderRepository,
+        ICommandDispatcher dispatcher)
     {
         _orderRepository = orderRepository;
+        _dispatcher = dispatcher;
     }
 
     public async Task<WebhookAcceptedResponse> HandleAsync(
@@ -58,6 +63,15 @@ public sealed class ProcessTmsEventCommandHandler
 
         await _orderRepository.UpdateAsync(order, cancellationToken);
 
+        if (order.VisitCount >= 3)
+            return await _dispatcher.DispatchAsync<AutoEmitToBeReturnCommand, WebhookAcceptedResponse>(
+                new AutoEmitToBeReturnCommand
+                {
+                    OrderNumber = order.OrderNumber,
+                    EventDate = eventDatePeru
+                },
+                cancellationToken);
+
         return new WebhookAcceptedResponse
         {
             Message = "Event accepted and order status updated.",
@@ -68,4 +82,3 @@ public sealed class ProcessTmsEventCommandHandler
         };
     }
 }
-
