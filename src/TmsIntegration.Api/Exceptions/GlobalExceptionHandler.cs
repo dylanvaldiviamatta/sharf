@@ -73,6 +73,13 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             null
         ),
 
+        OrderInFinalStateException finalStateEx => (
+            StatusCodes.Status409Conflict,
+            "Order In Final State",
+            finalStateEx.Message,
+            null
+        ),
+
         _ => (
             StatusCodes.Status500InternalServerError,
             "Internal Server Error",
@@ -85,6 +92,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     {
         400 => "https://tools.ietf.org/html/rfc7231#section-6.5.1",
         404 => "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+        409 => "https://tools.ietf.org/html/rfc7231#section-6.5.8",
         _   => "https://tools.ietf.org/html/rfc7231#section-6.6.1"
     };
 }
