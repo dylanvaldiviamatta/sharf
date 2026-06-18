@@ -43,12 +43,15 @@ public sealed class ProcessTmsEventCommandHandler
         if (order is null)
             throw new NotFoundException("Order", ev.Details.OrderNumber);
 
-        var newStatus = EventStatusMapper.ToEventStatus(ev.Status);
-
         if (EventStatusMapper.IsFinalStatus(order.CurrentStatus))
             throw new OrderInFinalStateException(
                 order.OrderNumber,
                 order.CurrentStatus.ToString());
+
+        var newStatus = EventStatusMapper.ToEventStatus(ev.Status);
+
+        if (EventStatusMapper.IsVisitableStatus(newStatus))
+            order.VisitCount++;
 
         order.CurrentStatus = newStatus;
         order.UpdatedAt = eventDatePeru;
@@ -60,6 +63,7 @@ public sealed class ProcessTmsEventCommandHandler
             Message = "Event accepted and order status updated.",
             OrderNumber = order.OrderNumber,
             Status = ev.Status,
+            VisitCount = order.VisitCount,
             AcceptedAt = DateTimeOffset.UtcNow
         };
     }
