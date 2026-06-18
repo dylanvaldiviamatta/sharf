@@ -1,5 +1,6 @@
 using TmsIntegration.Application.Common.Dispatcher;
 using TmsIntegration.Application.DTOs.Responses;
+using TmsIntegration.Domain.Entities;
 using TmsIntegration.Domain.Enums;
 using TmsIntegration.Domain.Exceptions;
 using TmsIntegration.Domain.Interfaces.Repositories;
@@ -10,10 +11,14 @@ public sealed class AutoEmitToBeReturnCommandHandler
     : ICommandHandler<AutoEmitToBeReturnCommand, WebhookAcceptedResponse>
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderEventRepository _orderEventRepository;
 
-    public AutoEmitToBeReturnCommandHandler(IOrderRepository orderRepository)
+    public AutoEmitToBeReturnCommandHandler(
+        IOrderRepository orderRepository,
+        IOrderEventRepository orderEventRepository)
     {
         _orderRepository = orderRepository;
+        _orderEventRepository = orderEventRepository;
     }
 
     public async Task<WebhookAcceptedResponse> HandleAsync(
@@ -31,6 +36,17 @@ public sealed class AutoEmitToBeReturnCommandHandler
         order.UpdatedAt = command.EventDate;
 
         await _orderRepository.UpdateAsync(order, cancellationToken);
+
+        await _orderEventRepository.AddAsync(new OrderEvent
+        {
+            OrderNumber = order.OrderNumber,
+            ServiceType = "SYSTEM",
+            DispatchType = "REVERSE",
+            Status = "TO_BE_RETURN",
+            EventDate = command.EventDate,
+            RegisteredAt = DateTimeOffset.UtcNow,
+            WasApplied = true
+        }, cancellationToken);
 
         return new WebhookAcceptedResponse
         {
